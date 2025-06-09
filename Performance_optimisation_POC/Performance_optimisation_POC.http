@@ -1,0 +1,6 @@
+@PerformanceOptimizationUsingAI_HostAddress = http://localhost:5183
+
+GET {{PerformanceOptimizationUsingAI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
