@@ -13,23 +13,23 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Inefficient: No scoped lifetime for query wrappers
-builder.Services.AddSingleton<CustomerQueryWrapper>();
-builder.Services.AddSingleton<ProductQueryWrapper>();
-builder.Services.AddSingleton<OrderQueryWrapper>();
-builder.Services.AddSingleton<ProductCategoryQueryWrapper>();
+// Fixed: Changed from singleton to scoped lifetime for query wrappers
+builder.Services.AddScoped<CustomerQueryWrapper>();
+builder.Services.AddScoped<ProductQueryWrapper>();
+builder.Services.AddScoped<OrderQueryWrapper>();
+builder.Services.AddScoped<ProductCategoryQueryWrapper>();
 
-// Inefficient: No scoped lifetime for repositories
-builder.Services.AddSingleton<ICustomerRepository, CustomerRepository>();
-builder.Services.AddSingleton<IProductRepository, ProductRepository>();
-builder.Services.AddSingleton<IOrderRepository, OrderRepository>();
-builder.Services.AddSingleton<IProductCategoryRepository, ProductCategoryRepository>();
+// Fixed: Changed from singleton to scoped lifetime for repositories
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 
-// Inefficient: No scoped lifetime for services
-builder.Services.AddSingleton<ICustomerService, CustomerService>();
-builder.Services.AddSingleton<IProductService, ProductService>();
-builder.Services.AddSingleton<IOrderService, OrderService>();
-builder.Services.AddSingleton<IProductCategoryService, ProductCategoryService>();
+// Fixed: Changed from singleton to scoped lifetime for services
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
 
 // Inefficient: No CORS policy
 builder.Services.AddCors();
@@ -47,7 +47,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Inefficient: No proper CORS configuration
 app.UseCors();
 
 app.UseHttpsRedirection();
@@ -56,5 +55,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Inefficient: No proper error handling middleware
 app.Run();

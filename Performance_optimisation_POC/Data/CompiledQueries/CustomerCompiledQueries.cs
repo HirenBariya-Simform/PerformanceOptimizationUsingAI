@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using PerformanceOptimizationUsingAI.Data;
 using PerformanceOptimizationUsingAI.Data.Domain.Entities;
 
 namespace PerformanceOptimizationUsingAI.Data.CompiledQueries;
