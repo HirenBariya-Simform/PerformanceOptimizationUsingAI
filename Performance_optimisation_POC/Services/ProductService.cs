@@ -41,14 +41,22 @@ public class ProductService : IProductService
         return products;
     }
 
-    // Inefficient: No proper error handling, no validation, no caching
+    // Get product by ID with categories included
     public Product GetProductById(int id)
     {
-        // Inefficient: Always hitting repository/database
-        var product = _productRepository.GetAllProducts()
-            .FirstOrDefault(p => p.ProductId == id);
+        return _productRepository.GetProductById(id);
+    }
 
-        return product;
+    // Get multiple products by IDs with categories included
+    public List<Product> GetProductsByIds(List<int> ids)
+    {
+        return _productRepository.GetProductsByIds(ids);
+    }
+
+    // Update product with category mappings
+    public void UpdateProduct(Product product)
+    {
+        _productRepository.UpdateProduct(product);
     }
 
     // Inefficient: No validation, no transaction

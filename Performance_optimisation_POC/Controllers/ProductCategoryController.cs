@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using PerformanceOptimizationUsingAI.Data.Domain.Entities;
+using PerformanceOptimizationUsingAI.DTOs.ProductCategory;
+using PerformanceOptimizationUsingAI.Extensions;
 using PerformanceOptimizationUsingAI.Services;
 
 namespace PerformanceOptimizationUsingAI.Controllers;
@@ -15,48 +16,69 @@ public class ProductCategoryController : ControllerBase
         _categoryService = categoryService;
     }
 
-    // Inefficient: No pagination, no filtering, no caching
+    /// <summary>
+    /// Get all categories with minimal information for listing
+    /// </summary>
     [HttpGet]
     public IActionResult GetAllCategories()
     {
         try
         {
             var categories = _categoryService.GetAllCategories();
-            return Ok(categories);
+            var response = categories.ToListItems();
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            // Inefficient: Poor error handling
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { message = "An error occurred while retrieving categories", error = ex.Message });
         }
     }
 
-    // Inefficient: No error handling, no async/await
+    /// <summary>
+    /// Get a specific category by ID with full details
+    /// </summary>
     [HttpGet("{id}")]
     public IActionResult GetCategoryById(int id)
     {
-        var category = _categoryService.GetCategoryById(id);
-        if (category == null!) return NotFound();
-        return Ok(category);
+        try
+        {
+            var category = _categoryService.GetCategoryById(id);
+            if (category == null)
+                return NotFound(new { message = $"Category with ID {id} not found" });
+            
+            var response = category.ToResponse();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving the category", error = ex.Message });
+        }
     }
 
-    // Inefficient: No pagination
+    /// <summary>
+    /// Search categories by name
+    /// </summary>
     [HttpGet("search/{name}")]
     public IActionResult SearchCategoriesByName(string name)
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(name))
+                return BadRequest(new { message = "Search name cannot be empty" });
+
             var categories = _categoryService.SearchCategoriesByName(name);
-            return Ok(categories);
+            var response = categories.ToResponseList();
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            // Inefficient: Poor error handling
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { message = "An error occurred while searching categories", error = ex.Message });
         }
     }
 
-    // Inefficient: No pagination
+    /// <summary>
+    /// Get products by category ID
+    /// </summary>
     [HttpGet("{id}/products")]
     public IActionResult GetProductsByCategory(int id)
     {
@@ -67,62 +89,78 @@ public class ProductCategoryController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Inefficient: Poor error handling
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { message = "An error occurred while retrieving products", error = ex.Message });
         }
     }
 
-    // Inefficient: No proper validation
+    /// <summary>
+    /// Create a new category
+    /// </summary>
     [HttpPost]
-    public IActionResult AddCategory([FromBody] ProductCategory category)
+    public IActionResult CreateCategory([FromBody] ProductCategoryCreateRequest request)
     {
         try
         {
-            // Inefficient: Unnecessary validation
-            if (category == null!) return BadRequest("No category provided");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            var category = request.ToEntity();
             _categoryService.AddCategory(category);
 
-            return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryId }, category);
+            var response = category.ToResponse();
+            return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryId }, response);
         }
         catch (Exception ex)
         {
-            // Inefficient: Poor error handling
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { message = "An error occurred while creating the category", error = ex.Message });
         }
     }
 
-    // Inefficient: No proper validation
+    /// <summary>
+    /// Update an existing category
+    /// </summary>
     [HttpPut("{id}")]
-    public IActionResult UpdateCategory(int id, [FromBody] ProductCategory category)
+    public IActionResult UpdateCategory(int id, [FromBody] ProductCategoryUpdateRequest request)
     {
-        if (id != category.CategoryId) return BadRequest();
-
         try
         {
-            _categoryService.UpdateCategory(category);
-            return NoContent();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var existingCategory = _categoryService.GetCategoryById(id);
+            if (existingCategory == null)
+                return NotFound(new { message = $"Category with ID {id} not found" });
+
+            existingCategory.UpdateFromRequest(request);
+            _categoryService.UpdateCategory(existingCategory);
+
+            var response = existingCategory.ToResponse();
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            // Inefficient: Poor error handling
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { message = "An error occurred while updating the category", error = ex.Message });
         }
     }
 
-    // Inefficient: No proper cleanup
+    /// <summary>
+    /// Delete a category
+    /// </summary>
     [HttpDelete("{id}")]
     public IActionResult DeleteCategory(int id)
     {
         try
         {
+            var existingCategory = _categoryService.GetCategoryById(id);
+            if (existingCategory == null)
+                return NotFound(new { message = $"Category with ID {id} not found" });
+
             _categoryService.DeleteCategory(id);
             return NoContent();
         }
         catch (Exception ex)
         {
-            // Inefficient: Poor error handling
-            return StatusCode(500, ex.Message);
+            return StatusCode(500, new { message = "An error occurred while deleting the category", error = ex.Message });
         }
     }
 }

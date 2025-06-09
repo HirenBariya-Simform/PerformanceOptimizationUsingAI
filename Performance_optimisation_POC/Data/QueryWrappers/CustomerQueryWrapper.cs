@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PerformanceOptimizationUsingAI.Data.CompiledQueries;
 using PerformanceOptimizationUsingAI.Data.Domain.Entities;
 
@@ -19,26 +20,82 @@ public class CustomerQueryWrapper
         return CustomerCompiledQueries.GetAllCustomers(_context).ToList();
     }
 
-    // Inefficient: N+1 query problem using compiled queries
+    // Inefficient: Multiple N+1 queries, unnecessary database calls
     public List<Customer> GetCustomersWithOrders()
     {
-        var customers = CustomerCompiledQueries.GetCustomersForOrders(_context).ToList();
+        // Inefficient: First query to get all customers
+        var customers = _context.Customers.ToList();
 
+        // Inefficient: N+1 query problem - separate query for each customer's orders
         foreach (var customer in customers)
         {
-            // Inefficient: N+1 queries even with compiled queries
-            var orders = CustomerCompiledQueries.GetOrdersByCustomerId(_context, customer.CustomerId).ToList();
+            // Inefficient: Separate query for orders
+            var orders = _context.Orders
+                .Where(o => o.CustomerId == customer.CustomerId)
+                .ToList();
+
+            // Inefficient: N+1 query problem - separate query for each order's items
+            foreach (var order in orders)
+            {
+                // Inefficient: Separate query for order items
+                var orderItems = _context.OrderItems
+                    .Where(oi => oi.OrderId == order.OrderId)
+                    .ToList();
+
+                // Inefficient: N+1 query problem - separate query for each order item's product
+                foreach (var orderItem in orderItems)
+                {
+                    // Inefficient: Separate query for product
+                    orderItem.Product = _context.Products
+                        .FirstOrDefault(p => p.ProductId == orderItem.ProductId);
+                }
+
+                order.OrderItems = orderItems;
+            }
+
             customer.Orders = orders;
         }
 
         return customers;
     }
 
-    // Inefficient: Direct compiled query call without caching
+    // Inefficient: Multiple separate queries, no caching
     public Customer GetCustomerById(int id)
     {
-        // Inefficient: Direct compiled query call without any optimization
-        return CustomerCompiledQueries.GetCustomerById(_context, id);
+        // Inefficient: First query to get customer
+        var customer = _context.Customers
+            .FirstOrDefault(c => c.CustomerId == id);
+
+        if (customer != null)
+        {
+            // Inefficient: Separate query for orders
+            var orders = _context.Orders
+                .Where(o => o.CustomerId == customer.CustomerId)
+                .ToList();
+
+            // Inefficient: N+1 query problem - separate query for each order's items
+            foreach (var order in orders)
+            {
+                // Inefficient: Separate query for order items
+                var orderItems = _context.OrderItems
+                    .Where(oi => oi.OrderId == order.OrderId)
+                    .ToList();
+
+                // Inefficient: N+1 query problem - separate query for each order item's product
+                foreach (var orderItem in orderItems)
+                {
+                    // Inefficient: Separate query for product
+                    orderItem.Product = _context.Products
+                        .FirstOrDefault(p => p.ProductId == orderItem.ProductId);
+                }
+
+                order.OrderItems = orderItems;
+            }
+
+            customer.Orders = orders;
+        }
+
+        return customer;
     }
 
     // Inefficient: Using compiled query for search operations

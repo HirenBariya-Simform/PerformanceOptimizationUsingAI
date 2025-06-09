@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using PerformanceOptimizationUsingAI.Data.Domain.Entities;
+using PerformanceOptimizationUsingAI.DTOs.Customer;
+using PerformanceOptimizationUsingAI.Extensions;
 using PerformanceOptimizationUsingAI.Services;
 
 namespace PerformanceOptimizationUsingAI.Controllers;
@@ -15,76 +16,131 @@ public class CustomerController : ControllerBase
         _customerService = customerService;
     }
 
-    // Inefficient: No async/await, no pagination, no caching
-    [HttpGet]
+    /// <summary>
+    /// Get all customers with minimal information for listing
+    /// </summary>
+    [HttpGet("List")]
     public IActionResult GetAllCustomers()
     {
-        // Inefficient: Direct service call without any optimization
-        var customers = _customerService.GetAllCustomers();
-        return Ok(customers);
+        try
+        {
+            var customers = _customerService.GetAllCustomers();
+            var response = customers.ToListItems();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving customers", error = ex.Message });
+        }
     }
 
-    // Inefficient: N+1 queries, no async/await
-    [HttpGet("with-orders")]
+    /// <summary>
+    /// Get customers with their orders
+    /// </summary>
+    [HttpGet("With-Orders")]
     public IActionResult GetCustomersWithOrders()
     {
-        var customers = _customerService.GetCustomersWithOrders();
-        return Ok(customers);
+        try
+        {
+            var customers = _customerService.GetCustomersWithOrders();
+            var response = customers.ToResponseList();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving customers with orders", error = ex.Message });
+        }
     }
 
-    // Inefficient: No error handling, no async/await
+    /// <summary>
+    /// Get a specific customer by ID with full details
+    /// </summary>
     [HttpGet("{id}")]
     public IActionResult GetCustomerById(int id)
     {
-        var customer = _customerService.GetCustomerById(id);
-        if (customer == null!) return NotFound();
-        return Ok(customer);
+        try
+        {
+            var customer = _customerService.GetCustomerById(id);
+            if (customer == null)
+                return NotFound(new { message = $"Customer with ID {id} not found" });
+            
+            var response = customer.ToResponse();
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving the customer", error = ex.Message });
+        }
     }
 
-    // Inefficient: No validation, no async/await
+    /// <summary>
+    /// Create a new customer
+    /// </summary>
     [HttpPost]
-    public IActionResult AddCustomer([FromBody] Customer customer)
+    public IActionResult CreateCustomer([FromBody] CustomerCreateRequest request)
     {
         try
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var customer = request.ToEntity();
             _customerService.AddCustomer(customer);
-            return CreatedAtAction(nameof(GetCustomerById), new { id = customer.CustomerId }, customer);
+
+            var response = customer.ToResponse();
+            return CreatedAtAction(nameof(GetCustomerById), new { id = customer.CustomerId }, response);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return StatusCode(500, new { message = "An error occurred while creating the customer", error = ex.Message });
         }
     }
 
-    // Inefficient: No validation, no async/await
+    /// <summary>
+    /// Update an existing customer
+    /// </summary>
     [HttpPut("{id}")]
-    public IActionResult UpdateCustomer(int id, [FromBody] Customer customer)
+    public IActionResult UpdateCustomer(int id, [FromBody] CustomerUpdateRequest request)
     {
-        if (id != customer.CustomerId) return BadRequest();
-
         try
         {
-            _customerService.UpdateCustomer(customer);
-            return NoContent();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var existingCustomer = _customerService.GetCustomerById(id);
+            if (existingCustomer == null)
+                return NotFound(new { message = $"Customer with ID {id} not found" });
+
+            existingCustomer.UpdateFromRequest(request);
+            _customerService.UpdateCustomer(existingCustomer);
+
+            var response = existingCustomer.ToResponse();
+            return Ok(response);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return StatusCode(500, new { message = "An error occurred while updating the customer", error = ex.Message });
         }
     }
 
-    // Inefficient: No cascade delete handling, no async/await
+    /// <summary>
+    /// Delete a customer
+    /// </summary>
     [HttpDelete("{id}")]
     public IActionResult DeleteCustomer(int id)
     {
         try
         {
+            var existingCustomer = _customerService.GetCustomerById(id);
+            if (existingCustomer == null)
+                return NotFound(new { message = $"Customer with ID {id} not found" });
+
             _customerService.DeleteCustomer(id);
             return NoContent();
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return StatusCode(500, new { message = "An error occurred while deleting the customer", error = ex.Message });
         }
     }
 }

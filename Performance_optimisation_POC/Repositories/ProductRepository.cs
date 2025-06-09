@@ -26,6 +26,25 @@ public class ProductRepository : IProductRepository
         return products;
     }
 
+    // Get a single product by ID with category mappings included
+    public Product GetProductById(int id)
+    {
+        return _context.Products
+            .Include(p => p.CategoryMappings)
+            .ThenInclude(cm => cm.Category)
+            .FirstOrDefault(p => p.ProductId == id);
+    }
+
+    // Get multiple products by IDs with category mappings included
+    public List<Product> GetProductsByIds(List<int> ids)
+    {
+        return _context.Products
+            .Include(p => p.CategoryMappings)
+            .ThenInclude(cm => cm.Category)
+            .Where(p => ids.Contains(p.ProductId))
+            .ToList();
+    }
+
     // Inefficient: Multiple database calls in a loop
     public List<Product> GetProductsByCategory(int categoryId)
     {
@@ -55,6 +74,13 @@ public class ProductRepository : IProductRepository
         return _context.Products
             .Where(p => p.Name.Contains(searchTerm) || p.Description.Contains(searchTerm))
             .ToList();
+    }
+
+    // Update product with category mappings
+    public void UpdateProduct(Product product)
+    {
+        _context.Products.Update(product);
+        _context.SaveChanges();
     }
 
     // Inefficient: No transaction, no validation

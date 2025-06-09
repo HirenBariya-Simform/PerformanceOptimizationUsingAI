@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PerformanceOptimizationUsingAI.Data.CompiledQueries;
 using PerformanceOptimizationUsingAI.Data.Domain.Entities;
 
@@ -22,12 +23,25 @@ public class OrderQueryWrapper
     // Inefficient: N+1 query problem using compiled queries
     public List<Order> GetOrdersWithDetails()
     {
-        var orders = OrderCompiledQueries.GetAllOrders(_context).ToList();
+        // Inefficient: First query to get all orders
+        var orders = _context.Orders.ToList();
 
+        // Inefficient: N+1 query problem - separate query for each order's items
         foreach (var order in orders)
         {
-            // Inefficient: N+1 queries even with compiled queries
-            var orderItems = OrderCompiledQueries.GetOrderItemsByOrderId(_context, order.OrderId).ToList();
+            // Inefficient: Separate query for order items
+            var orderItems = _context.OrderItems
+                .Where(oi => oi.OrderId == order.OrderId)
+                .ToList();
+
+            // Inefficient: N+1 query problem - separate query for each order item's product
+            foreach (var orderItem in orderItems)
+            {
+                // Inefficient: Separate query for product
+                orderItem.Product = _context.Products
+                    .FirstOrDefault(p => p.ProductId == orderItem.ProductId);
+            }
+
             order.OrderItems = orderItems;
         }
 
@@ -37,8 +51,29 @@ public class OrderQueryWrapper
     // Inefficient: Direct compiled query call without caching
     public Order GetOrderById(int id)
     {
-        // Inefficient: Direct compiled query call without any optimization
-        return OrderCompiledQueries.GetOrderById(_context, id);
+        // Inefficient: First query to get order
+        var order = _context.Orders
+            .FirstOrDefault(o => o.OrderId == id);
+
+        if (order != null)
+        {
+            // Inefficient: Separate query for order items
+            var orderItems = _context.OrderItems
+                .Where(oi => oi.OrderId == order.OrderId)
+                .ToList();
+
+            // Inefficient: N+1 query problem - separate query for each order item's product
+            foreach (var orderItem in orderItems)
+            {
+                // Inefficient: Separate query for product
+                orderItem.Product = _context.Products
+                    .FirstOrDefault(p => p.ProductId == orderItem.ProductId);
+            }
+
+            order.OrderItems = orderItems;
+        }
+
+        return order;
     }
 
     // Inefficient: Using compiled query for search operations
