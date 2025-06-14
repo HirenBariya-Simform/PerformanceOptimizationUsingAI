@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using PerformanceOptimizationUsingAI.Data.Domain.Entities;
-using PerformanceOptimizationUsingAI.DTOs.Product;
-using PerformanceOptimizationUsingAI.Extensions;
-using PerformanceOptimizationUsingAI.Services;
+using POC.DTOs.Extensions;
+using POC.DTOs.Product;
+using POC.Services;
 
-namespace PerformanceOptimizationUsingAI.Controllers;
+namespace POC.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -18,7 +17,7 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
-    /// Get all products with minimal information for listing
+    ///     Get all products with minimal information for listing
     /// </summary>
     [HttpGet]
     public IActionResult GetAllProducts()
@@ -36,7 +35,7 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
-    /// Get a specific product by ID with full details
+    ///     Get a specific product by ID with full details
     /// </summary>
     [HttpGet("{id}")]
     public IActionResult GetProductById(int id)
@@ -52,12 +51,13 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving the product", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving the product", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get products by category
+    ///     Get products by category
     /// </summary>
     [HttpGet("category/{categoryId}")]
     public IActionResult GetProductsByCategory(int categoryId)
@@ -70,12 +70,13 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving products by category", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving products by category", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Create new products
+    ///     Create new products
     /// </summary>
     [HttpPost]
     public IActionResult CreateProducts([FromBody] List<ProductCreateRequest> requests)
@@ -105,7 +106,7 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
-    /// Update an existing product
+    ///     Update an existing product
     /// </summary>
     [HttpPut("{id}")]
     public IActionResult UpdateProduct(int id, [FromBody] ProductUpdateRequest request)
@@ -129,12 +130,13 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while updating the product", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while updating the product", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Update product stock quantity
+    ///     Update product stock quantity
     /// </summary>
     [HttpPut("{id}/stock")]
     public IActionResult UpdateStock(int id, [FromBody] ProductStockUpdateRequest request)
@@ -154,12 +156,13 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while updating product stock", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while updating product stock", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Delete a product
+    ///     Delete a product
     /// </summary>
     [HttpDelete("{id}")]
     public IActionResult DeleteProduct(int id)
@@ -175,7 +178,8 @@ public class ProductController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the product", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while deleting the product", error = ex.Message });
         }
     }
 }

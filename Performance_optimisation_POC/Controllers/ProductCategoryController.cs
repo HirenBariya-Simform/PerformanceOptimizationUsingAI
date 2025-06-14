@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using PerformanceOptimizationUsingAI.DTOs.ProductCategory;
-using PerformanceOptimizationUsingAI.Extensions;
-using PerformanceOptimizationUsingAI.Services;
+using POC.DTOs.Extensions;
+using POC.DTOs.ProductCategory;
+using POC.Services;
 
-namespace PerformanceOptimizationUsingAI.Controllers;
+namespace POC.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -17,7 +17,7 @@ public class ProductCategoryController : ControllerBase
     }
 
     /// <summary>
-    /// Get all categories with minimal information for listing
+    ///     Get all categories with minimal information for listing
     /// </summary>
     [HttpGet]
     public IActionResult GetAllCategories()
@@ -30,12 +30,13 @@ public class ProductCategoryController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving categories", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving categories", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get a specific category by ID with full details
+    ///     Get a specific category by ID with full details
     /// </summary>
     [HttpGet("{id}")]
     public IActionResult GetCategoryById(int id)
@@ -45,18 +46,19 @@ public class ProductCategoryController : ControllerBase
             var category = _categoryService.GetCategoryById(id);
             if (category == null)
                 return NotFound(new { message = $"Category with ID {id} not found" });
-            
+
             var response = category.ToResponse();
             return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving the category", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving the category", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Search categories by name
+    ///     Search categories by name
     /// </summary>
     [HttpGet("search/{name}")]
     public IActionResult SearchCategoriesByName(string name)
@@ -72,12 +74,13 @@ public class ProductCategoryController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while searching categories", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while searching categories", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get products by category ID
+    ///     Get products by category ID
     /// </summary>
     [HttpGet("{id}/products")]
     public IActionResult GetProductsByCategory(int id)
@@ -94,7 +97,7 @@ public class ProductCategoryController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new category
+    ///     Create a new category
     /// </summary>
     [HttpPost]
     public IActionResult CreateCategory([FromBody] ProductCategoryCreateRequest request)
@@ -112,12 +115,13 @@ public class ProductCategoryController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while creating the category", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while creating the category", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Update an existing category
+    ///     Update an existing category
     /// </summary>
     [HttpPut("{id}")]
     public IActionResult UpdateCategory(int id, [FromBody] ProductCategoryUpdateRequest request)
@@ -139,12 +143,13 @@ public class ProductCategoryController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while updating the category", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while updating the category", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Delete a category
+    ///     Delete a category
     /// </summary>
     [HttpDelete("{id}")]
     public IActionResult DeleteCategory(int id)
@@ -160,7 +165,8 @@ public class ProductCategoryController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the category", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while deleting the category", error = ex.Message });
         }
     }
 }

@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using PerformanceOptimizationUsingAI.Data;
-using PerformanceOptimizationUsingAI.Data.QueryWrappers;
-using PerformanceOptimizationUsingAI.Repositories;
-using PerformanceOptimizationUsingAI.Services;
+using POC.Data;
+using POC.Data.QueryWrappers;
+using POC.Data.Repositories;
+using POC.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

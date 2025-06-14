@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using PerformanceOptimizationUsingAI.Data.Domain.Entities;
-using PerformanceOptimizationUsingAI.DTOs.Order;
-using PerformanceOptimizationUsingAI.Extensions;
-using PerformanceOptimizationUsingAI.Services;
+using POC.DTOs.Extensions;
+using POC.DTOs.Order;
+using POC.Services;
 
-namespace PerformanceOptimizationUsingAI.Controllers;
+namespace POC.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -18,7 +17,7 @@ public class OrderController : ControllerBase
     }
 
     /// <summary>
-    /// Get all orders with minimal information for listing
+    ///     Get all orders with minimal information for listing
     /// </summary>
     [HttpGet("List")]
     public IActionResult GetAllOrders()
@@ -36,7 +35,7 @@ public class OrderController : ControllerBase
     }
 
     /// <summary>
-    /// Get orders with full details including order items
+    ///     Get orders with full details including order items
     /// </summary>
     [HttpGet("details")]
     public IActionResult GetOrdersWithDetails()
@@ -49,12 +48,13 @@ public class OrderController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving orders with details", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving orders with details", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get a specific order by ID with full details
+    ///     Get a specific order by ID with full details
     /// </summary>
     [HttpGet("{id}")]
     public IActionResult GetOrderById(int id)
@@ -64,18 +64,19 @@ public class OrderController : ControllerBase
             var order = _orderService.GetOrderById(id);
             if (order == null)
                 return NotFound(new { message = $"Order with ID {id} not found" });
-            
+
             var response = order.ToResponse();
             return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving the order", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving the order", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get orders by customer ID
+    ///     Get orders by customer ID
     /// </summary>
     [HttpGet("customer/{customerId}")]
     public IActionResult GetOrdersByCustomerId(int customerId)
@@ -88,12 +89,13 @@ public class OrderController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving customer orders", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving customer orders", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get orders by status
+    ///     Get orders by status
     /// </summary>
     [HttpGet("status/{status}")]
     public IActionResult GetOrdersByStatus(string status)
@@ -109,12 +111,13 @@ public class OrderController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving orders by status", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving orders by status", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Create a new order
+    ///     Create a new order
     /// </summary>
     [HttpPost]
     public IActionResult CreateOrder([FromBody] OrderCreateRequest request)
@@ -137,7 +140,7 @@ public class OrderController : ControllerBase
     }
 
     /// <summary>
-    /// Update an existing order (mainly status updates)
+    ///     Update an existing order (mainly status updates)
     /// </summary>
     [HttpPut("{id}")]
     public IActionResult UpdateOrderStatus(int id, [FromBody] OrderUpdateRequest request)
@@ -164,7 +167,7 @@ public class OrderController : ControllerBase
     }
 
     /// <summary>
-    /// Delete an order
+    ///     Delete an order
     /// </summary>
     [HttpDelete("{id}")]
     public IActionResult DeleteOrder(int id)

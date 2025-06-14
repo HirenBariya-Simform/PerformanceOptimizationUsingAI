@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using PerformanceOptimizationUsingAI.DTOs.Customer;
-using PerformanceOptimizationUsingAI.Extensions;
-using PerformanceOptimizationUsingAI.Services;
+using POC.DTOs.Customer;
+using POC.DTOs.Extensions;
+using POC.Services;
 
-namespace PerformanceOptimizationUsingAI.Controllers;
+namespace POC.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -17,7 +17,7 @@ public class CustomerController : ControllerBase
     }
 
     /// <summary>
-    /// Get all customers with minimal information for listing
+    ///     Get all customers with minimal information for listing
     /// </summary>
     [HttpGet("List")]
     public IActionResult GetAllCustomers()
@@ -30,12 +30,13 @@ public class CustomerController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving customers", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving customers", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get customers with their orders
+    ///     Get customers with their orders
     /// </summary>
     [HttpGet("With-Orders")]
     public IActionResult GetCustomersWithOrders()
@@ -48,12 +49,13 @@ public class CustomerController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving customers with orders", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving customers with orders", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Get a specific customer by ID with full details
+    ///     Get a specific customer by ID with full details
     /// </summary>
     [HttpGet("{id}")]
     public IActionResult GetCustomerById(int id)
@@ -63,18 +65,19 @@ public class CustomerController : ControllerBase
             var customer = _customerService.GetCustomerById(id);
             if (customer == null)
                 return NotFound(new { message = $"Customer with ID {id} not found" });
-            
+
             var response = customer.ToResponse();
             return Ok(response);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving the customer", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while retrieving the customer", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Create a new customer
+    ///     Create a new customer
     /// </summary>
     [HttpPost]
     public IActionResult CreateCustomer([FromBody] CustomerCreateRequest request)
@@ -92,12 +95,13 @@ public class CustomerController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while creating the customer", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while creating the customer", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Update an existing customer
+    ///     Update an existing customer
     /// </summary>
     [HttpPut("{id}")]
     public IActionResult UpdateCustomer(int id, [FromBody] CustomerUpdateRequest request)
@@ -119,12 +123,13 @@ public class CustomerController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while updating the customer", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while updating the customer", error = ex.Message });
         }
     }
 
     /// <summary>
-    /// Delete a customer
+    ///     Delete a customer
     /// </summary>
     [HttpDelete("{id}")]
     public IActionResult DeleteCustomer(int id)
@@ -140,7 +145,8 @@ public class CustomerController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the customer", error = ex.Message });
+            return StatusCode(500,
+                new { message = "An error occurred while deleting the customer", error = ex.Message });
         }
     }
 }
