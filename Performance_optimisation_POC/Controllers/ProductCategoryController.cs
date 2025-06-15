@@ -7,24 +7,17 @@ namespace POC.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ProductCategoryController : ControllerBase
+public class ProductCategoryController(IProductCategoryService categoryService) : ControllerBase
 {
-    private readonly IProductCategoryService _categoryService;
-
-    public ProductCategoryController(IProductCategoryService categoryService)
-    {
-        _categoryService = categoryService;
-    }
-
     /// <summary>
     ///     Get all categories with minimal information for listing
     /// </summary>
     [HttpGet]
-    public IActionResult GetAllCategories()
+    public IActionResult AllCategories()
     {
         try
         {
-            var categories = _categoryService.GetAllCategories();
+            var categories = categoryService.GetAllCategories();
             var response = categories.ToListItems();
             return Ok(response);
         }
@@ -39,11 +32,11 @@ public class ProductCategoryController : ControllerBase
     ///     Get a specific category by ID with full details
     /// </summary>
     [HttpGet("{id}")]
-    public IActionResult GetCategoryById(int id)
+    public IActionResult CategoryById(int id)
     {
         try
         {
-            var category = _categoryService.GetCategoryById(id);
+            var category = categoryService.GetCategoryById(id);
             if (category == null)
                 return NotFound(new { message = $"Category with ID {id} not found" });
 
@@ -54,45 +47,6 @@ public class ProductCategoryController : ControllerBase
         {
             return StatusCode(500,
                 new { message = "An error occurred while retrieving the category", error = ex.Message });
-        }
-    }
-
-    /// <summary>
-    ///     Search categories by name
-    /// </summary>
-    [HttpGet("search/{name}")]
-    public IActionResult SearchCategoriesByName(string name)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(name))
-                return BadRequest(new { message = "Search name cannot be empty" });
-
-            var categories = _categoryService.SearchCategoriesByName(name);
-            var response = categories.ToResponseList();
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500,
-                new { message = "An error occurred while searching categories", error = ex.Message });
-        }
-    }
-
-    /// <summary>
-    ///     Get products by category ID
-    /// </summary>
-    [HttpGet("{id}/products")]
-    public IActionResult GetProductsByCategory(int id)
-    {
-        try
-        {
-            var products = _categoryService.GetProductsByCategory(id);
-            return Ok(products);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while retrieving products", error = ex.Message });
         }
     }
 
@@ -108,10 +62,10 @@ public class ProductCategoryController : ControllerBase
                 return BadRequest(ModelState);
 
             var category = request.ToEntity();
-            _categoryService.AddCategory(category);
+            categoryService.AddCategory(category);
 
             var response = category.ToResponse();
-            return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryId }, response);
+            return CreatedAtAction(nameof(CategoryById), new { id = category.CategoryId }, response);
         }
         catch (Exception ex)
         {
@@ -131,12 +85,12 @@ public class ProductCategoryController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var existingCategory = _categoryService.GetCategoryById(id);
+            var existingCategory = categoryService.GetCategoryById(id);
             if (existingCategory == null)
                 return NotFound(new { message = $"Category with ID {id} not found" });
 
             existingCategory.UpdateFromRequest(request);
-            _categoryService.UpdateCategory(existingCategory);
+            categoryService.UpdateCategory(existingCategory);
 
             var response = existingCategory.ToResponse();
             return Ok(response);
@@ -156,11 +110,11 @@ public class ProductCategoryController : ControllerBase
     {
         try
         {
-            var existingCategory = _categoryService.GetCategoryById(id);
+            var existingCategory = categoryService.GetCategoryById(id);
             if (existingCategory == null)
                 return NotFound(new { message = $"Category with ID {id} not found" });
 
-            _categoryService.DeleteCategory(id);
+            categoryService.DeleteCategory(id);
             return NoContent();
         }
         catch (Exception ex)
@@ -169,4 +123,44 @@ public class ProductCategoryController : ControllerBase
                 new { message = "An error occurred while deleting the category", error = ex.Message });
         }
     }
+
+    ///// <summary>
+    /////     Search categories by name
+    ///// </summary>
+    //[HttpGet("search/{name}")]
+    //public IActionResult SearchCategoriesByName(string name)
+    //{
+    //    try
+    //    {
+    //        if (string.IsNullOrWhiteSpace(name))
+    //            return BadRequest(new { message = "Search name cannot be empty" });
+
+    //        var categories = _categoryService.SearchCategoriesByName(name);
+    //        var response = categories.ToResponseList();
+    //        return Ok(response);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return StatusCode(500,
+    //            new { message = "An error occurred while searching categories", error = ex.Message });
+    //    }
+    //}
+
+
+    ///// <summary>
+    /////     Get products by category ID
+    ///// </summary>
+    //[HttpGet("{id}/products")]
+    //public IActionResult GetProductsByCategory(int id)
+    //{
+    //    try
+    //    {
+    //        var products = _categoryService.GetProductsByCategory(id);
+    //        return Ok(products);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return StatusCode(500, new { message = "An error occurred while retrieving products", error = ex.Message });
+    //    }
+    //}
 }

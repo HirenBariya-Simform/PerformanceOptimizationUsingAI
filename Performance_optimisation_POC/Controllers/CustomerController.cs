@@ -7,24 +7,17 @@ namespace POC.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class CustomerController : ControllerBase
+public class CustomerController(ICustomerService customerService) : ControllerBase
 {
-    private readonly ICustomerService _customerService;
-
-    public CustomerController(ICustomerService customerService)
-    {
-        _customerService = customerService;
-    }
-
     /// <summary>
     ///     Get all customers with minimal information for listing
     /// </summary>
     [HttpGet("List")]
-    public IActionResult GetAllCustomers()
+    public IActionResult AllCustomers()
     {
         try
         {
-            var customers = _customerService.GetAllCustomers();
+            var customers = customerService.GetAllCustomers();
             var response = customers.ToListItems();
             return Ok(response);
         }
@@ -39,11 +32,11 @@ public class CustomerController : ControllerBase
     ///     Get customers with their orders
     /// </summary>
     [HttpGet("With-Orders")]
-    public IActionResult GetCustomersWithOrders()
+    public IActionResult CustomersWithOrders()
     {
         try
         {
-            var customers = _customerService.GetCustomersWithOrders();
+            var customers = customerService.GetCustomersWithOrders();
             var response = customers.ToResponseList();
             return Ok(response);
         }
@@ -58,12 +51,12 @@ public class CustomerController : ControllerBase
     ///     Get a specific customer by ID with full details
     /// </summary>
     [HttpGet("{id}")]
-    public IActionResult GetCustomerById(int id)
+    public IActionResult CustomerById(int id)
     {
         try
         {
-            var customer = _customerService.GetCustomerById(id);
-            if (customer == null)
+            var customer = customerService.GetCustomerById(id);
+            if (customer == default!)
                 return NotFound(new { message = $"Customer with ID {id} not found" });
 
             var response = customer.ToResponse();
@@ -88,10 +81,10 @@ public class CustomerController : ControllerBase
                 return BadRequest(ModelState);
 
             var customer = request.ToEntity();
-            _customerService.AddCustomer(customer);
+            customerService.AddCustomer(customer);
 
             var response = customer.ToResponse();
-            return CreatedAtAction(nameof(GetCustomerById), new { id = customer.CustomerId }, response);
+            return CreatedAtAction(nameof(CustomerById), new { id = customer.CustomerId }, response);
         }
         catch (Exception ex)
         {
@@ -111,12 +104,12 @@ public class CustomerController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var existingCustomer = _customerService.GetCustomerById(id);
-            if (existingCustomer == null)
+            var existingCustomer = customerService.GetCustomerById(id);
+            if (existingCustomer == null!)
                 return NotFound(new { message = $"Customer with ID {id} not found" });
 
             existingCustomer.UpdateFromRequest(request);
-            _customerService.UpdateCustomer(existingCustomer);
+            customerService.UpdateCustomer(existingCustomer);
 
             var response = existingCustomer.ToResponse();
             return Ok(response);
@@ -136,11 +129,11 @@ public class CustomerController : ControllerBase
     {
         try
         {
-            var existingCustomer = _customerService.GetCustomerById(id);
-            if (existingCustomer == null)
+            var existingCustomer = customerService.GetCustomerById(id);
+            if (existingCustomer == null!)
                 return NotFound(new { message = $"Customer with ID {id} not found" });
 
-            _customerService.DeleteCustomer(id);
+            customerService.DeleteCustomer(id);
             return NoContent();
         }
         catch (Exception ex)

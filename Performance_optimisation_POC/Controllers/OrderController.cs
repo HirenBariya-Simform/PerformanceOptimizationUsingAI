@@ -7,24 +7,17 @@ namespace POC.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrderController : ControllerBase
+public class OrderController(IOrderService orderService) : ControllerBase
 {
-    private readonly IOrderService _orderService;
-
-    public OrderController(IOrderService orderService)
-    {
-        _orderService = orderService;
-    }
-
     /// <summary>
     ///     Get all orders with minimal information for listing
     /// </summary>
     [HttpGet("List")]
-    public IActionResult GetAllOrders()
+    public IActionResult AllOrders()
     {
         try
         {
-            var orders = _orderService.GetAllOrders();
+            var orders = orderService.GetAllOrders();
             var response = orders.ToListItems();
             return Ok(response);
         }
@@ -38,11 +31,11 @@ public class OrderController : ControllerBase
     ///     Get orders with full details including order items
     /// </summary>
     [HttpGet("details")]
-    public IActionResult GetOrdersWithDetails()
+    public IActionResult OrdersWithDetails()
     {
         try
         {
-            var orders = _orderService.GetOrdersWithDetails();
+            var orders = orderService.GetOrdersWithDetails();
             var response = orders.ToResponseList();
             return Ok(response);
         }
@@ -57,12 +50,12 @@ public class OrderController : ControllerBase
     ///     Get a specific order by ID with full details
     /// </summary>
     [HttpGet("{id}")]
-    public IActionResult GetOrderById(int id)
+    public IActionResult OrderById(int id)
     {
         try
         {
-            var order = _orderService.GetOrderById(id);
-            if (order == null)
+            var order = orderService.GetOrderById(id);
+            if (order == null!)
                 return NotFound(new { message = $"Order with ID {id} not found" });
 
             var response = order.ToResponse();
@@ -79,11 +72,11 @@ public class OrderController : ControllerBase
     ///     Get orders by customer ID
     /// </summary>
     [HttpGet("customer/{customerId}")]
-    public IActionResult GetOrdersByCustomerId(int customerId)
+    public IActionResult OrdersByCustomerId(int customerId)
     {
         try
         {
-            var orders = _orderService.GetOrdersByCustomerId(customerId);
+            var orders = orderService.GetOrdersByCustomerId(customerId);
             var response = orders.ToResponseList();
             return Ok(response);
         }
@@ -98,14 +91,14 @@ public class OrderController : ControllerBase
     ///     Get orders by status
     /// </summary>
     [HttpGet("status/{status}")]
-    public IActionResult GetOrdersByStatus(string status)
+    public IActionResult OrdersByStatus(string status)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(status))
                 return BadRequest(new { message = "Status cannot be empty" });
 
-            var orders = _orderService.GetOrdersByStatus(status);
+            var orders = orderService.GetOrdersByStatus(status);
             var response = orders.ToResponseList();
             return Ok(response);
         }
@@ -128,10 +121,10 @@ public class OrderController : ControllerBase
                 return BadRequest(ModelState);
 
             var order = request.ToEntity();
-            _orderService.AddOrder(order);
+            orderService.AddOrder(order);
 
             var response = order.ToResponse();
-            return CreatedAtAction(nameof(GetOrderById), new { id = order.OrderId }, response);
+            return CreatedAtAction(nameof(OrderById), new { id = order.OrderId }, response);
         }
         catch (Exception ex)
         {
@@ -150,12 +143,12 @@ public class OrderController : ControllerBase
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var existingOrder = _orderService.GetOrderById(id);
-            if (existingOrder == null)
+            var existingOrder = orderService.GetOrderById(id);
+            if (existingOrder == null!)
                 return NotFound(new { message = $"Order with ID {id} not found" });
 
             existingOrder.UpdateFromRequest(request);
-            _orderService.UpdateOrder(existingOrder);
+            orderService.UpdateOrder(existingOrder);
 
             var response = existingOrder.ToResponse();
             return Ok(response);
@@ -174,11 +167,11 @@ public class OrderController : ControllerBase
     {
         try
         {
-            var existingOrder = _orderService.GetOrderById(id);
-            if (existingOrder == null)
+            var existingOrder = orderService.GetOrderById(id);
+            if (existingOrder == null!)
                 return NotFound(new { message = $"Order with ID {id} not found" });
 
-            _orderService.DeleteOrder(id);
+            orderService.DeleteOrder(id);
             return NoContent();
         }
         catch (Exception ex)
