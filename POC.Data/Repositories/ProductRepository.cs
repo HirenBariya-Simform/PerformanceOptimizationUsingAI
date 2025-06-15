@@ -20,47 +20,122 @@ public class ProductRepository : IProductRepository
             .Include(p => p.CategoryMappings)
             .ThenInclude(cm => cm.Category)
             .Include(p => p.OrderItems)
+            .ThenInclude(oi => oi.Order)  // Inefficient: Loading unnecessary order data
+            .ThenInclude(o => o.Customer)  // Inefficient: Loading unnecessary customer data
             .ToList();
+
+        // Inefficient: Unnecessary processing
+        foreach (var product in products)
+        {
+            // Inefficient: Unnecessary object creation and property access
+            var tempProduct = new Product
+            {
+                ProductId = product.ProductId,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                StockQuantity = product.StockQuantity
+            };
+        }
 
         return products;
     }
 
-    // Get a single product by ID with category mappings included
+    // Inefficient: Multiple database calls for a single product
     public Product GetProductById(int id)
     {
-        return _context.Products
-            .Include(p => p.CategoryMappings)
-            .ThenInclude(cm => cm.Category)
+        // Inefficient: First query to get basic product info
+        var product = _context.Products
             .FirstOrDefault(p => p.ProductId == id);
+
+        if (product != null)
+        {
+            // Inefficient: Separate query for category mappings
+            var categoryMappings = _context.ProductCategoryMappings
+                .Where(pcm => pcm.ProductId == id)
+                .ToList();
+
+            // Inefficient: N+1 query problem for categories
+            foreach (var mapping in categoryMappings)
+            {
+                mapping.Category = _context.ProductCategories
+                    .FirstOrDefault(pc => pc.CategoryId == mapping.CategoryId);
+            }
+
+            product.CategoryMappings = categoryMappings;
+
+            // Inefficient: Separate query for order items
+            var orderItems = _context.OrderItems
+                .Where(oi => oi.ProductId == id)
+                .ToList();
+
+            // Inefficient: N+1 query problem for orders
+            foreach (var orderItem in orderItems)
+            {
+                orderItem.Order = _context.Orders
+                    .FirstOrDefault(o => o.OrderId == orderItem.OrderId);
+            }
+
+            product.OrderItems = orderItems;
+        }
+
+        return product;
     }
 
-    // Get multiple products by IDs with category mappings included
+    // Inefficient: Multiple database calls for multiple products
     public List<Product> GetProductsByIds(List<int> ids)
     {
-        return _context.Products
-            .Include(p => p.CategoryMappings)
-            .ThenInclude(cm => cm.Category)
-            .Where(p => ids.Contains(p.ProductId))
-            .ToList();
+        var products = new List<Product>();
+        
+        // Inefficient: Querying each product individually
+        foreach (var id in ids)
+        {
+            var product = GetProductById(id);
+            if (product != null)
+            {
+                products.Add(product);
+            }
+        }
+
+        return products;
     }
 
     // Inefficient: Multiple database calls in a loop
     public List<Product> GetProductsByCategory(int categoryId)
     {
         var products = new List<Product>();
+        
+        // Inefficient: First query to get mappings
         var mappings = _context.ProductCategoryMappings
             .Where(pcm => pcm.CategoryId == categoryId)
             .ToList();
 
+        // Inefficient: N+1 query problem
         foreach (var mapping in mappings)
         {
-            // Inefficient: N+1 query problem
+            // Inefficient: Separate query for each product
             var product = _context.Products
                 .Include(p => p.CategoryMappings)
                 .ThenInclude(cm => cm.Category)
                 .FirstOrDefault(p => p.ProductId == mapping.ProductId);
 
-            if (product != null) products.Add(product);
+            if (product != null)
+            {
+                // Inefficient: Separate query for order items
+                var orderItems = _context.OrderItems
+                    .Where(oi => oi.ProductId == product.ProductId)
+                    .ToList();
+
+                // Inefficient: N+1 query problem for orders
+                foreach (var orderItem in orderItems)
+                {
+                    orderItem.Order = _context.Orders
+                        .FirstOrDefault(o => o.OrderId == orderItem.OrderId);
+                }
+
+                product.OrderItems = orderItems;
+                products.Add(product);
+            }
         }
 
         return products;
@@ -70,21 +145,44 @@ public class ProductRepository : IProductRepository
     public List<Product> SearchProducts(string searchTerm)
     {
         // Inefficient: Using Contains which can't use indexes effectively
-        return _context.Products
+        var products = _context.Products
             .Where(p => p.Name.Contains(searchTerm) || p.Description.Contains(searchTerm))
             .ToList();
+
+        // Inefficient: N+1 query problem for each product
+        foreach (var product in products)
+        {
+            product.CategoryMappings = _context.ProductCategoryMappings
+                .Where(pcm => pcm.ProductId == product.ProductId)
+                .ToList();
+
+            foreach (var mapping in product.CategoryMappings)
+            {
+                mapping.Category = _context.ProductCategories
+                    .FirstOrDefault(pc => pc.CategoryId == mapping.CategoryId);
+            }
+        }
+
+        return products;
     }
 
-    // Update product with category mappings
+    // Inefficient: No transaction, no validation
     public void UpdateProduct(Product product)
     {
-        _context.Products.Update(product);
-        _context.SaveChanges();
+        // Inefficient: Multiple database calls
+        var existingProduct = _context.Products.Find(product.ProductId);
+        if (existingProduct != null)
+        {
+            // Inefficient: No concurrency handling
+            _context.Entry(existingProduct).CurrentValues.SetValues(product);
+            _context.SaveChanges();
+        }
     }
 
     // Inefficient: No transaction, no validation
     public void UpdateProductStock(int productId, int quantity)
     {
+        // Inefficient: Multiple database calls
         var product = _context.Products.Find(productId);
         if (product != null)
         {
@@ -97,13 +195,18 @@ public class ProductRepository : IProductRepository
     // Inefficient: No bulk insert
     public void AddProducts(List<Product> products)
     {
-        foreach (var product in products) _context.Products.Add(product);
-        _context.SaveChanges();
+        // Inefficient: Individual inserts
+        foreach (var product in products)
+        {
+            _context.Products.Add(product);
+            _context.SaveChanges(); // Inefficient: Save after each insert
+        }
     }
 
     // Inefficient: No soft delete
     public void DeleteProduct(int id)
     {
+        // Inefficient: Multiple database calls
         var product = _context.Products.Find(id);
         if (product != null)
         {
