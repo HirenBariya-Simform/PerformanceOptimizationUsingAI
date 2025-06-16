@@ -5,17 +5,22 @@ namespace POC.Data.CompiledQueries;
 
 public static class ProductCompiledQueries
 {
-    // Inefficient: Not using compiled queries properly
-    public static readonly Func<ApplicationDbContext, IEnumerable<Product>> GetAllProducts =
+    public static readonly Func<ApplicationDbContext, IEnumerable<Product>> GetAllProductsWithDetails =
         EF.CompileQuery((ApplicationDbContext context) =>
             context.Products
                 .Include(p => p.CategoryMappings)
                 .ThenInclude(cm => cm.Category)
-                .Include(p => p.OrderItems)
-                .AsNoTracking()); // Inefficient: Loading all related data at once
+                .AsNoTracking());
 
-    // Inefficient: Compiled query with complex joins
-    public static readonly Func<ApplicationDbContext, int, IEnumerable<Product>> GetProductsByCategory =
+    public static readonly Func<ApplicationDbContext, int, Product> GetProductByIdWithDetails =
+        EF.CompileQuery((ApplicationDbContext context, int id) =>
+            context.Products
+                .Include(p => p.CategoryMappings)
+                .ThenInclude(cm => cm.Category)
+                .AsNoTracking()
+                .FirstOrDefault(p => p.ProductId == id));
+
+    public static readonly Func<ApplicationDbContext, int, IEnumerable<Product>> GetProductsByCategoryWithDetails =
         EF.CompileQuery((ApplicationDbContext context, int categoryId) =>
             context.Products
                 .Where(p => p.CategoryMappings.Any(cm => cm.CategoryId == categoryId))
@@ -23,28 +28,17 @@ public static class ProductCompiledQueries
                 .ThenInclude(cm => cm.Category)
                 .AsNoTracking());
 
-    // Inefficient: Using compiled query for search operations
     public static readonly Func<ApplicationDbContext, string, IEnumerable<Product>> SearchProducts =
         EF.CompileQuery((ApplicationDbContext context, string searchTerm) =>
             context.Products
                 .Where(p => p.Name.Contains(searchTerm) || p.Description.Contains(searchTerm))
+                .Include(p => p.CategoryMappings)
+                .ThenInclude(cm => cm.Category)
                 .AsNoTracking());
 
-    // Inefficient: Using compiled query for stock operations
-    public static readonly Func<ApplicationDbContext, int, int> GetProductStock =
-        EF.CompileQuery((ApplicationDbContext context, int productId) =>
+    public static readonly Func<ApplicationDbContext, int, Product> GetProductByIdForStock =
+        EF.CompileQuery((ApplicationDbContext context, int id) =>
             context.Products
-                .Where(p => p.ProductId == productId)
-                .Select(p => p.StockQuantity)
-                .FirstOrDefault());
-
-    // Inefficient: Not using compiled query for this operation
-    public static Product GetProductById(ApplicationDbContext context, int id)
-    {
-        // Inefficient: Should be compiled but isn't
-        return context.Products
-            .Include(p => p.CategoryMappings)
-            .ThenInclude(cm => cm.Category)
-            .FirstOrDefault(p => p.ProductId == id);
-    }
+                .AsNoTracking()
+                .FirstOrDefault(p => p.ProductId == id));
 }
