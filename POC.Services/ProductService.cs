@@ -12,63 +12,53 @@ public class ProductService : IProductService
         _productRepository = productRepository;
     }
 
-    // Inefficient: No pagination, no caching
-    public List<Product> GetAllProducts()
+    public async Task<List<Product>> GetAllProducts()
     {
-        // Inefficient: Direct repository call without any optimization
-        return _productRepository.GetAllProducts();
+        return await _productRepository.GetAllProductsAsync();
     }
 
-    // Inefficient: Multiple database calls, no caching
-    public List<Product> GetProductsByCategory(int categoryId)
+    public async Task<List<Product>> GetProductsByCategory(int categoryId)
     {
-        var products = _productRepository.GetProductsByCategory(categoryId);
-        return products;
+        return await _productRepository.GetProductsByCategoryAsync(categoryId);
     }
 
-    // Get product by ID with categories included
-    public Product GetProductById(int id)
+    public async Task<Product?> GetProductById(int id)
     {
-        return _productRepository.GetProductById(id);
+        return await _productRepository.GetProductByIdAsync(id);
     }
 
-    // Get multiple products by IDs with categories included
-    public List<Product> GetProductsByIds(List<int> ids)
+    public async Task<List<Product>> GetProductsByIds(List<int> ids)
     {
-        return _productRepository.GetProductsByIds(ids);
+        return await _productRepository.GetProductsByIdsAsync(ids);
     }
 
-    // Update product with category mappings
-    public void UpdateProduct(Product product)
+    public async Task UpdateProduct(Product product)
     {
-        _productRepository.UpdateProduct(product);
+        await _productRepository.UpdateProductAsync(product);
     }
 
-    // Inefficient: No validation, no transaction
-    public void UpdateProductStock(int productId, int quantity)
+    public async Task UpdateProductStock(int productId, int quantity)
     {
-        // Inefficient: Unnecessary database call
-        var product = GetProductById(productId);
-        if (product == null) throw new Exception("Product not found");
-
-        // Inefficient: No stock validation
-        _productRepository.UpdateProductStock(productId, quantity);
+        await _productRepository.UpdateProductStockAsync(productId, quantity);
     }
 
-    // Inefficient: No bulk operation optimization
-    public void AddProducts(List<Product> products)
+    public async Task AddProduct(Product product)
     {
-        // Inefficient: Unnecessary validation
-        foreach (var product in products)
-            if (string.IsNullOrEmpty(product.Name))
-                throw new Exception($"Product name cannot be empty for product {product.ProductId}");
-
-        _productRepository.AddProducts(products);
+        await _productRepository.AddProductAsync(product);
     }
 
-    // Inefficient: No proper cleanup
-    public void DeleteProduct(int id)
+    public async Task AddProducts(List<Product> products)
     {
-        _productRepository.DeleteProduct(id);
+        await _productRepository.AddProductsAsync(products);
+    }
+
+    public async Task DeleteProduct(int id)
+    {
+        await _productRepository.DeleteProductAsync(id);
+    }
+
+    public void Dispose()
+    {
+        _productRepository.Dispose();
     }
 }

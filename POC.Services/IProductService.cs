@@ -2,14 +2,15 @@ using POC.Data.Domain.Entities;
 
 namespace POC.Services;
 
-public interface IProductService
+public interface IProductService : IDisposable
 {
-    List<Product> GetAllProducts();
-    List<Product> GetProductsByCategory(int categoryId);
-    Product GetProductById(int id);
-    List<Product> GetProductsByIds(List<int> ids);
-    void UpdateProduct(Product product);
-    void UpdateProductStock(int productId, int quantity);
-    void AddProducts(List<Product> products);
-    void DeleteProduct(int id);
+    Task<List<Product>> GetAllProducts();
+    Task<Product?> GetProductById(int id);
+    Task<List<Product>> GetProductsByIds(List<int> ids);
+    Task<List<Product>> GetProductsByCategory(int categoryId);
+    Task UpdateProduct(Product product);
+    Task UpdateProductStock(int productId, int quantity);
+    Task AddProduct(Product product);
+    Task AddProducts(List<Product> products);
+    Task DeleteProduct(int id);
 }

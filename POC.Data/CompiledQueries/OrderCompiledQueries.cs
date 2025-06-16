@@ -5,34 +5,57 @@ namespace POC.Data.CompiledQueries;
 
 public static class OrderCompiledQueries
 {
-    // Inefficient: Not using compiled queries properly
+    // Optimized basic order list query with minimal includes
     public static readonly Func<ApplicationDbContext, IEnumerable<Order>> GetAllOrders =
         EF.CompileQuery((ApplicationDbContext context) =>
             context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                .AsNoTracking()); // Inefficient: Loading all related data at once
+                .AsNoTracking());
 
-    // Inefficient: Not using compiled query for simple operations
-    public static readonly Func<ApplicationDbContext, int, Order> GetOrderById =
+    // Optimized: Single database query with filtered loading
+    public static readonly Func<ApplicationDbContext, int, Order?> GetOrderById =
         EF.CompileQuery((ApplicationDbContext context, int id) =>
-            context.Orders.FirstOrDefault(o => o.OrderId == id));
+            context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.OrderItems.Where(oi => oi.Quantity > 0))
+                    .ThenInclude(oi => oi.Product)
+                .AsNoTracking()
+                .FirstOrDefault(o => o.OrderId == id));
 
-    // Inefficient: Compiled query for N+1 scenario
+    // Optimized: Efficient query with filtered loading
     public static readonly Func<ApplicationDbContext, int, IEnumerable<Order>> GetOrdersByCustomerId =
         EF.CompileQuery((ApplicationDbContext context, int customerId) =>
-            context.Orders.Where(o => o.CustomerId == customerId).AsNoTracking());
+            context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.OrderItems.Where(oi => oi.Quantity > 0))
+                    .ThenInclude(oi => oi.Product)
+                .Where(o => o.CustomerId == customerId)
+                .AsNoTracking());
 
-    // Inefficient: Using compiled query for search operations
+    // Optimized: Status-based filtering with selective loading
     public static readonly Func<ApplicationDbContext, string, IEnumerable<Order>> GetOrdersByStatus =
         EF.CompileQuery((ApplicationDbContext context, string status) =>
-            context.Orders.Where(o => o.Status == status).AsNoTracking());
+            context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.OrderItems.Where(oi => oi.Quantity > 0))
+                    .ThenInclude(oi => oi.Product)
+                .Where(o => o.Status == status)
+                .AsNoTracking());
 
-    // Inefficient: Not using compiled query for this operation
-    public static IEnumerable<OrderItem> GetOrderItemsByOrderId(ApplicationDbContext context, int orderId)
-    {
-        // Inefficient: Should be compiled but isn't
-        return context.OrderItems.Where(oi => oi.OrderId == orderId).AsNoTracking();
-    }
+    // Optimized: Specific items query with minimal loading
+    public static readonly Func<ApplicationDbContext, int, IEnumerable<OrderItem>> GetOrderItems =
+        EF.CompileQuery((ApplicationDbContext context, int orderId) =>
+            context.OrderItems
+                .Include(oi => oi.Product)
+                .Where(oi => oi.OrderId == orderId && oi.Quantity > 0)
+                .AsNoTracking());
+
+    // Optimized: Product stock query with efficient projection
+    public static readonly Func<ApplicationDbContext, int, int> GetProductStock =
+        EF.CompileQuery((ApplicationDbContext context, int productId) =>
+            context.Products
+                .Where(p => p.ProductId == productId)
+                .Select(p => p.StockQuantity)
+                .FirstOrDefault());
 }
