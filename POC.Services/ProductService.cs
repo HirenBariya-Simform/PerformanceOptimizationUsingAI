@@ -23,21 +23,6 @@ public class ProductService : IProductService
     public List<Product> GetProductsByCategory(int categoryId)
     {
         var products = _productRepository.GetProductsByCategory(categoryId);
-
-        // Inefficient: Unnecessary processing
-        foreach (var product in products)
-        {
-            // Inefficient: Unnecessary object creation
-            var tempProduct = new Product
-            {
-                ProductId = product.ProductId,
-                Name = product.Name,
-                Description = product.Description,
-                Price = product.Price,
-                StockQuantity = product.StockQuantity
-            };
-        }
-
         return products;
     }
 

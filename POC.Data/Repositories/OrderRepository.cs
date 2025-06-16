@@ -184,13 +184,26 @@ public class OrderRepository : IOrderRepository
         return orders;
     }
 
-    // Inefficient: No transaction, no validation
+    // Inefficient: No transaction, no validation, individual processing
     public void AddOrder(Order order)
     {
-        // Inefficient: Multiple database calls
+        // Inefficient: Process order items one by one
+        foreach (var orderItem in order.OrderItems)
+        {
+            // Inefficient: Individual database call for each product
+            var product = _context.Products
+                .FirstOrDefault(p => p.ProductId == orderItem.ProductId);
+
+            if (product != null)
+            {
+                // Inefficient: Individual update for each product
+                product.StockQuantity -= orderItem.Quantity;
+                _context.SaveChanges(); // Inefficient: Save after each item
+            }
+        }
+
+        // Inefficient: Individual save for order
         _context.Orders.Add(order);
-        
-        // Inefficient: Save after each operation
         _context.SaveChanges();
 
         // Inefficient: Unnecessary validation query
@@ -201,10 +214,25 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefault(o => o.OrderId == order.OrderId);
     }
 
-    // Inefficient: No transaction, no validation
+    // Inefficient: No transaction, no validation, individual processing
     public void UpdateOrder(Order order)
     {
-        // Inefficient: Multiple database calls
+        // Inefficient: Process order items one by one
+        foreach (var orderItem in order.OrderItems)
+        {
+            // Inefficient: Individual database call for each product
+            var product = _context.Products
+                .FirstOrDefault(p => p.ProductId == orderItem.ProductId);
+
+            if (product != null)
+            {
+                // Inefficient: Individual update for each product
+                product.StockQuantity -= orderItem.Quantity;
+                _context.SaveChanges(); // Inefficient: Save after each item
+            }
+        }
+
+        // Inefficient: Individual save for order
         var existingOrder = _context.Orders.Find(order.OrderId);
         if (existingOrder != null)
         {
@@ -214,19 +242,33 @@ public class OrderRepository : IOrderRepository
         }
     }
 
-    // Inefficient: No cascade delete handling
+    // Inefficient: No cascade delete handling, individual processing
     public void DeleteOrder(int id)
     {
         // Inefficient: Multiple database calls
         var order = GetOrderById(id);
         if (order != null)
         {
-            // Inefficient: Separate delete for order items
+            // Inefficient: Process order items one by one
             foreach (var orderItem in order.OrderItems)
             {
+                // Inefficient: Individual database call for each product
+                var product = _context.Products
+                    .FirstOrDefault(p => p.ProductId == orderItem.ProductId);
+
+                if (product != null)
+                {
+                    // Inefficient: Individual update for each product
+                    product.StockQuantity += orderItem.Quantity;
+                    _context.SaveChanges(); // Inefficient: Save after each item
+                }
+
+                // Inefficient: Individual delete for each order item
                 _context.OrderItems.Remove(orderItem);
+                _context.SaveChanges(); // Inefficient: Save after each item
             }
 
+            // Inefficient: Individual delete for order
             _context.Orders.Remove(order);
             _context.SaveChanges();
         }

@@ -10,7 +10,11 @@ namespace POC.API.Controllers;
 public class ProductController(IProductService productService) : ControllerBase
 {
     /// <summary>
-    ///     Get all products with minimal information for listing
+    /// Performance Issues:
+    /// 1. Unnecessary Data Loading: Loads all products without pagination
+    /// 2. Memory Inefficiencies: No result set size limits
+    /// 3. Inefficient Query Patterns: No filtering or sorting at database level
+    /// 4. Inefficient Query Patterns: No proper indexing strategy
     /// </summary>
     [HttpGet]
     public IActionResult AllProducts()
@@ -28,7 +32,11 @@ public class ProductController(IProductService productService) : ControllerBase
     }
 
     /// <summary>
-    ///     Get a specific product by ID with full details
+    /// Performance Issues:
+    /// 1. Inefficient Query Patterns: No proper indexing strategy
+    /// 2. Unnecessary Data Loading: Loads full product details when only basic info is needed
+    /// 3. Memory Inefficiencies: No caching strategy for frequently accessed products
+    /// 4. Inefficient Query Patterns: N+1 query problem with category loading
     /// </summary>
     [HttpGet("{id}")]
     public IActionResult ProductById(int id)
@@ -50,7 +58,11 @@ public class ProductController(IProductService productService) : ControllerBase
     }
 
     /// <summary>
-    ///     Get products by category
+    /// Performance Issues:
+    /// 1. Inefficient Query Patterns: No proper indexing on categoryId
+    /// 2. Unnecessary Data Loading: Loads full product details when only category products are needed
+    /// 3. Memory Inefficiencies: No pagination for categories with many products
+    /// 4. Inefficient Query Patterns: N+1 query problem with category details
     /// </summary>
     [HttpGet("category/{categoryId}")]
     public IActionResult ProductsByCategory(int categoryId)
@@ -69,7 +81,12 @@ public class ProductController(IProductService productService) : ControllerBase
     }
 
     /// <summary>
-    ///     Create new products
+    /// Performance Issues:
+    /// 1. Transaction and Concurrency Issues: No proper transaction management
+    /// 2. Write Operation Inefficiencies: No bulk insert optimization
+    /// 3. Memory Inefficiencies: No validation of input data size
+    /// 4. Inefficient Query Patterns: Multiple database calls for product creation
+    /// 5. Inefficient Query Patterns: N+1 query problem when reloading created products
     /// </summary>
     [HttpPost]
     public IActionResult CreateProducts([FromBody] List<ProductCreateRequest> requests)
@@ -85,7 +102,7 @@ public class ProductController(IProductService productService) : ControllerBase
             var products = requests.Select(r => r.ToEntity()).ToList();
             productService.AddProducts(products);
 
-            // Reload products with category information to avoid null reference errors
+            // Inefficient: Reloading products with category information
             var productIds = products.Select(p => p.ProductId).ToList();
             var createdProducts = productService.GetProductsByIds(productIds);
 
@@ -99,7 +116,12 @@ public class ProductController(IProductService productService) : ControllerBase
     }
 
     /// <summary>
-    ///     Update an existing product
+    /// Performance Issues:
+    /// 1. Transaction and Concurrency Issues: No optimistic concurrency control
+    /// 2. Write Operation Inefficiencies: No bulk update optimization
+    /// 3. Memory Inefficiencies: No validation of update data
+    /// 4. Inefficient Query Patterns: Multiple database calls for product update
+    /// 5. Inefficient Query Patterns: N+1 query problem when reloading updated product
     /// </summary>
     [HttpPut("{id}")]
     public IActionResult UpdateProduct(int id, [FromBody] ProductUpdateRequest request)
@@ -116,7 +138,7 @@ public class ProductController(IProductService productService) : ControllerBase
             existingProduct.UpdateFromRequest(request);
             productService.UpdateProduct(existingProduct);
 
-            // Reload product with category information to avoid null reference errors
+            // Inefficient: Reloading product with category information
             var updatedProduct = productService.GetProductById(id);
             var response = updatedProduct.ToResponse();
             return Ok(response);
@@ -129,7 +151,11 @@ public class ProductController(IProductService productService) : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a product
+    /// Performance Issues:
+    /// 1. Transaction and Concurrency Issues: No proper transaction management
+    /// 2. Write Operation Inefficiencies: No cascade delete optimization
+    /// 3. Memory Inefficiencies: No cleanup of related data
+    /// 4. Inefficient Query Patterns: Multiple database calls for product deletion
     /// </summary>
     [HttpDelete("{id}")]
     public IActionResult DeleteProduct(int id)
@@ -137,7 +163,7 @@ public class ProductController(IProductService productService) : ControllerBase
         try
         {
             var existingProduct = productService.GetProductById(id);
-            if (existingProduct == null)
+            if (existingProduct == null!)
                 return NotFound(new { message = $"Product with ID {id} not found" });
 
             productService.DeleteProduct(id);
