@@ -17,8 +17,7 @@ This is an E-commerce Application developed using ASP.NET Core API. It uses Enti
 # Prompts
 Step 1: Create New Branch With Basic Context And End Goal
 ---------------------------------------
-- Create a new branch named 'feature/copilot-agent-testX' from the latest 'master' branch. 
-- For Reference: This branch will be used specifically to identify and fix performance issues in the application.
+- Create a new branch: 'feature/copilot-agent-testX' from the 'master' branch.
 
 Step 2: Set Context for the Copilot Agent
 --------------------------------------------
